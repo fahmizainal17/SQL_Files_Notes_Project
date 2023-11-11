@@ -1,0 +1,102 @@
+--Muhammad Fahmi Bin Mohd Zainal
+/*
+Use JOINs and UNIONs to answer the following questions:
+1. Which region saw the most returned items? For what reasons?
+2. What product was returned most often?
+3. Which of our “top vendors” (3M, Apple, Avery, Cisco, Epson, Hewlett-
+Packard (HP, Hewlett Packard), Logitech, Panasonic, Samsung, and
+Xerox) saw the most returns?
+4. Which product is most profitable with the consumer segment?
+*/
+
+1.
+WITH ReturnCounts AS (
+  SELECT rg.region, r.reason_returned, COUNT(*) AS count_per_reason_returned
+  FROM orders AS o
+  JOIN Returns AS r ON o.order_id = r.order_id
+  JOIN Regions AS rg ON o.region_id = rg.region_id
+  GROUP BY rg.region, r.reason_returned
+)
+
+SELECT region, reason_returned, count_per_reason_returned
+FROM ReturnCounts
+WHERE (region, count_per_reason_returned) IN (
+  SELECT region, MAX(count_per_reason_returned)
+  FROM ReturnCounts
+  GROUP BY region
+)
+ORDER BY count_per_reason_returned DESC;
+
+Answer
+"Americas"	"Not Given"	8004
+"EMEA"	"Not Given"	7034
+"APAC"	"Not Given"	4398
+
+2.
+SELECT rg.region, r.reason_returned, COUNT(*) AS count_per_reason_returned
+FROM orders AS o
+JOIN Returns AS r ON o.order_id = r.order_id
+JOIN Regions AS rg ON o.region_id = rg.region_id
+GROUP BY rg.region, r.reason_returned
+HAVING COUNT(*) = (
+  SELECT MAX(return_count)
+  FROM (
+    SELECT rg.region, COUNT(*) AS return_count
+    FROM orders AS o
+    JOIN Returns AS r ON o.order_id = r.order_id
+    JOIN Regions AS rg ON o.region_id = rg.region_id
+    GROUP BY rg.region
+  ) AS MaxReturnCount
+)
+ORDER BY count_per_reason_returned DESC;
+
+Answer 
+"Staples"	281
+3.
+SELECT vendor, COUNT(*) AS return_counts
+FROM (
+  SELECT
+    CASE 
+      WHEN product_name ILIKE '%3M%' THEN '3M'
+      WHEN product_name ILIKE '%Apple%' THEN 'Apple'
+      WHEN product_name ILIKE '%Avery%' THEN 'Avery'
+      WHEN product_name ILIKE '%Cisco%' THEN 'Cisco'
+      WHEN product_name ILIKE '%Epson%' THEN 'Epson'
+      WHEN product_name ILIKE '%Hewlett%' OR product_name ILIKE '%HP%' THEN 'Hewlett-Packard'
+      WHEN product_name ILIKE '%Logitech%' THEN 'Logitech'
+      WHEN product_name ILIKE '%Panasonic%' THEN 'Panasonic'
+      WHEN product_name ILIKE '%Samsung%' THEN 'Samsung'
+      WHEN product_name ILIKE '%Xerox%' THEN 'Xerox'
+    END AS vendor
+  FROM products
+  JOIN orders ON orders.product_id = products.product_id
+  JOIN returns ON orders.order_id = returns.order_id
+) AS categorized_products
+GROUP BY vendor
+HAVING vendor IS NOT NULL
+ORDER BY return_counts DESC;
+
+Answer
+"Avery"	1896
+"Xerox"	1197
+"Logitech"	765
+"Samsung"	703
+"Hewlett-Packard"	601
+"Apple"	547
+"Cisco"	442
+"Panasonic"	311
+"Epson"	307
+"3M"	55
+
+4.
+SELECT o.product_id, product_name ,SUM (profit) as total_profit
+FROM orders AS o
+JOIN products AS p ON o.product_id=p.product_id
+JOIN customers AS c ON o.customer_id=c.customer_id
+WHERE segment = 'Consumer'
+GROUP BY o.product_id,product_name
+ORDER BY total_profit desc
+LIMIT 1;
+
+Answer
+"TEC-CO-10004722"	"Canon imageCLASS 2200 Advanced Copier"	12904.17

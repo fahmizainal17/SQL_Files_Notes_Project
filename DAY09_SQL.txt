@@ -1,0 +1,65 @@
+--Muhammad Fahmi Bin Mohd Zainal
+/*
+Use subqueries to answer the following questions:
+1. Has our organization sales grown over the years?
+2. On average, what percent of salespeople make a sale each month?
+3. What percent of all sales in the United States did returns make up in
+2020?
+*/
+1.
+SELECT DATE_PART('year',order_month) as order_year, AVG(monthly_sales) as monthly_average_sales_per_year
+FROM (
+SELECT DATE_TRUNC('month',order_date) as order_month, SUM(sales) as monthly_sales
+FROM orders
+GROUP BY order_month
+     ) AS fahmi
+GROUP BY order_year;
+Answer;
+2015	2114.0600000000000000
+2016	789018.397500000000
+2017	2535652.518333333333
+2018	5688918.417500000000
+2019	10904337.575000000000
+2020	4447514.740000000000
+
+
+2.
+WITH MonthlySalesCounts AS (
+    SELECT
+        DATE_TRUNC('month', order_date) AS order_month,
+        COUNT(DISTINCT salesperson) AS salespeople_count
+    FROM regions AS r
+    INNER JOIN orders AS o ON r.region_id = o.region_id
+    GROUP BY order_month
+)
+SELECT AVG(salespeople_count * 100.0 / total_salespeople) AS average_percent_salespeople_per_month
+FROM MonthlySalesCounts
+CROSS JOIN (
+    SELECT COUNT(DISTINCT salesperson) AS total_salespeople
+    FROM regions AS r
+    INNER JOIN orders AS o ON r.region_id = o.region_id
+) AS TotalSalespeople
+
+Answer
+99.2000000000000000
+
+
+3.
+SELECT (
+    SELECT SUM(o.sales) AS return_total_sales
+    FROM orders o
+    JOIN regions g ON o.region_id = g.region_id
+    WHERE o.order_id IN (
+        SELECT order_id
+        FROM public.returns
+    )
+    AND g.country = 'United States'
+    AND DATE_PART('year', o.order_date) = 2020
+) / SUM(sales) * 100 AS return_percent_sale_United_States
+FROM orders o
+JOIN regions g ON o.region_id = g.region_id
+WHERE DATE_PART('year', order_date) = 2020
+AND g.country = 'United States';
+
+Answer
+8.31673922628654450300

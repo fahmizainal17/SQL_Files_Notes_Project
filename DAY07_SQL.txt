@@ -1,0 +1,76 @@
+--FahmiZainal
+/*
+1. Do our customers prefer a certain type of shipping class? Find the number of orders per
+ship mode.
+2. How many unique salespeople do we have employed in each region? How does that
+compare to the number of unique countries in each region?
+3. Find the most popular reason for returns.
+4. Bonus: Create a query that groups the total number of products available by vendor. The
+vendors we want to focus on are 3M, Apple, Avery, Cisco, Epson, Hewlett-Packard (HP,
+Hewlett Packard), Logitech, Panasonic, Samsung, and Xerox.(Hint: use product_name
+column to get the vendor details)
+*/
+1.
+SELECT(ship_mode) , COUNT (order_id) as count_of_orders
+FROM orders AS o
+GROUP BY o.ship_mode;
+/*
+Answer
+"First Class"	51911
+"Same Day"	204627
+"Second Class"	333013
+"Standard Class"	401126
+*/
+2.
+SELECT region, COUNT (DISTINCT salesperson)AS count_of_unique_salesperson,COUNT (DISTINCT country) AS count_of_unique_countries
+FROM regions 
+GROUP BY region;
+/*
+Answer
+"Americas"	9	26
+"APAC"	5	29
+"EMEA"	5	91
+*/
+3.
+SELECT reason_returned , COUNT (reason_returned) AS Count_of_Reason_returned
+FROM returns
+GROUP BY reason_returned 
+ORDER BY Count_of_Reason_returned DESC
+LIMIT 1
+/*
+Answer
+"Not Given"	18988
+*/
+4. 
+SELECT 
+  CASE
+    WHEN product_name ILIKE '%3M%' THEN '3M'
+    WHEN product_name ILIKE '%Apple%' THEN 'Apple'
+    WHEN product_name ILIKE '%Avery%' THEN 'Avery'
+    WHEN product_name ILIKE '%Cisco%' THEN 'Cisco'
+    WHEN product_name ILIKE '%Epson%' THEN 'Epson'
+    WHEN product_name ILIKE '%HP%'OR product_name ILIKE '%Hewlett%' THEN 'Hewlett-Packard'
+    WHEN product_name ILIKE '%Logitech%' THEN 'Logitech'
+    WHEN product_name ILIKE '%Panasonic%' THEN 'Panasonic'
+    WHEN product_name ILIKE '%Samsung%' THEN 'Samsung'
+    WHEN product_name ILIKE '%Xerox%' THEN 'Xerox'
+    ELSE 'Other'
+  END AS vendor_group,
+  COUNT(*) AS product_count
+FROM products
+GROUP BY vendor_group;
+
+/*
+Answer
+"Avery"	302
+"Apple"	111
+"Samsung"	120
+"Panasonic"	107
+"Other"	8824
+"Xerox"	260
+"Epson"	88
+"Cisco"	119
+"Hewlett-Packard"	214
+"Logitech"	141
+"3M"	6
+*/
